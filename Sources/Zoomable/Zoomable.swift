@@ -9,7 +9,9 @@ struct ZoomableModifier: ViewModifier {
     @State private var lastTransform: CGAffineTransform = .identity
     @State private var transform: CGAffineTransform = .identity
     @State private var contentSize: CGSize = .zero
-
+    
+    @Binding var isZoomed: Bool
+    
     func body(content: Content) -> some View {
         content
             .background(alignment: .topLeading) {
@@ -39,6 +41,7 @@ struct ZoomableModifier: ViewModifier {
                 let zoomFactor = 0.5
                 let scale = value * zoomFactor
                 transform = lastTransform.scaledBy(x: scale, y: scale)
+                isZoomed = transform != .identity
             }
             .onEnded { _ in
                 onEndGesture()
@@ -57,6 +60,8 @@ struct ZoomableModifier: ViewModifier {
                 withAnimation(.interactiveSpring) {
                     transform = lastTransform.concatenating(newTransform)
                 }
+                
+                isZoomed = transform != .identity
             }
             .onEnded { _ in
                 onEndGesture()
@@ -77,6 +82,8 @@ struct ZoomableModifier: ViewModifier {
                     transform = newTransform
                     lastTransform = newTransform
                 }
+                
+                isZoomed = transform != .identity
             }
     }
 
@@ -138,11 +145,13 @@ public extension View {
     @ViewBuilder
     func zoomable(
         minZoomScale: CGFloat = 1,
-        doubleTapZoomScale: CGFloat = 3
+        doubleTapZoomScale: CGFloat = 3,
+        isZoomed: Binding<Bool>
     ) -> some View {
         modifier(ZoomableModifier(
             minZoomScale: minZoomScale,
-            doubleTapZoomScale: doubleTapZoomScale
+            doubleTapZoomScale: doubleTapZoomScale,
+            isZoomed: isZoomed
         ))
     }
 
@@ -150,14 +159,16 @@ public extension View {
     func zoomable(
         minZoomScale: CGFloat = 1,
         doubleTapZoomScale: CGFloat = 3,
-        outOfBoundsColor: Color = .clear
+        outOfBoundsColor: Color = .clear,
+        isZoomed: Binding<Bool>
     ) -> some View {
         GeometryReader { proxy in
             ZStack {
                 outOfBoundsColor
                 self.zoomable(
                     minZoomScale: minZoomScale,
-                    doubleTapZoomScale: doubleTapZoomScale
+                    doubleTapZoomScale: doubleTapZoomScale,
+                    isZoomed: isZoomed
                 )
             }
         }
